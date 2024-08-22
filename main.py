@@ -9,9 +9,14 @@ from response_templates.help_tmpl import (
     help_info_template,
     help_send_template,
 )
+from response_templates.create_tmpl import create_user_template, create_failed_template
+from users.controller import User
+from users.schemas import UserType
 
 load_dotenv()
 app = FastAPI()
+user_db = User()
+
 origins = [
     "*",
 ]
@@ -47,5 +52,13 @@ async def receive_sms(sms: SMSModel):
                         return help_create_template
                     case "send":
                         return help_send_template
+
+    match command.lower():
+        case "create":
+            user = user_db.create(UserType(phone_number=sms.from_, pin="1234"))
+            if user[0]:
+                return create_user_template.format(account_number=user)
+            else:
+                return user[1]
 
     return [command, segments]
