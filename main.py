@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from accounts.controller import Account
 from sms.models import SMSModel
 from dotenv import load_dotenv
 from response_templates.help_tmpl import (
@@ -16,6 +17,7 @@ from users.schemas import UserType
 load_dotenv()
 app = FastAPI()
 user_db = User()
+account_db = Account()
 
 origins = [
     "*",
@@ -57,6 +59,7 @@ async def receive_sms(sms: SMSModel):
         case "create":
             user = user_db.create(UserType(phone_number=sms.from_, pin="1234"))
             if user[0]:
+                user_account = account_db.create(UserType(**user[1]))
                 return create_user_template.format(account_number=user)
             else:
                 return user[1]

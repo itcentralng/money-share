@@ -6,7 +6,6 @@ from response_templates.create_tmpl import (
     create_failed_template,
 )
 from response_templates.account_tmpl import (
-    account_info_template,
     account_not_found_template,
 )
 
@@ -17,7 +16,6 @@ class User:
 
     def __init__(self):
         self.db = db
-        # self.user = None
 
     def create(self, user: UserType):
         try:
@@ -35,11 +33,10 @@ class User:
                 return [False, create_failed_template]
 
     def get(self, user: UserType):
-        print(user)
         try:
             response = (
                 self.db.table("users")
-                .select("*")
+                .select("*, accounts(*)")
                 .eq("phone_number", user.phone_number)
                 .execute()
             )
