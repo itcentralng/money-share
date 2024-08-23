@@ -1,4 +1,5 @@
 from dotenv import load_dotenv
+from accounts.schemas import AccountType
 from db.controller import db
 from users.schemas import UserType
 
@@ -26,3 +27,16 @@ class Account:
         except Exception as error:
             print(error)
             return [False, "Account creation failed"]
+
+    def update(self, user_id: int, amount: float):
+        try:
+            response = (
+                self.db.table("accounts")
+                .update({"balance": amount})
+                .eq("user_id", user_id)
+                .execute()
+            )
+            return [True, response]
+        except Exception as error:
+            print(error)
+            return [True, "Something went wrong. Try again"]

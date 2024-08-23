@@ -10,7 +10,7 @@ from response_templates.help_tmpl import (
     help_info_template,
     help_send_template,
 )
-from response_templates.create_tmpl import create_user_template, create_failed_template
+from response_templates.create_tmpl import create_user_template
 from users.controller import User
 from users.schemas import UserType
 
@@ -59,7 +59,7 @@ async def receive_sms(sms: SMSModel):
         case "create":
             user = user_db.create(UserType(phone_number=sms.from_, pin="1234"))
             if user[0]:
-                user_account = account_db.create(UserType(**user[1]))
+                # user_account = account_db.create(UserType(**user[1]))
                 return create_user_template.format(account_number=user)
             else:
                 return user[1]
@@ -71,5 +71,23 @@ async def receive_sms(sms: SMSModel):
                 return create_user_template.format(account_number=user)
             else:
                 return user[1]
+
+    match command.lower():
+        case "send":
+            amount, beneficiary_number = segments
+            try:
+                amount = float(amount)
+            except ValueError:
+                return "Provide a valid amount"
+
+            response = user_db.send(
+                sender_number=sms.from_,
+                beneficiary_number=beneficiary_number,
+                amount=float(amount),
+            )
+            if response[0]:
+                return response
+            else:
+                return response[1]
 
     return [command, segments]

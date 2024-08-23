@@ -1,5 +1,5 @@
 create_user_template = (
-    "You Monee share account was created successfully.\n"
+    "Your Monee share account was created successfully.\n"
     "Account Number: {account_number}\n"
 )
 
