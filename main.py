@@ -61,4 +61,12 @@ async def receive_sms(sms: SMSModel):
             else:
                 return user[1]
 
+    match command.lower():
+        case "info":
+            user = user_db.get(UserType(phone_number=sms.from_, pin="1234"))
+            if user[0]:
+                return create_user_template.format(account_number=user)
+            else:
+                return user[1]
+
     return [command, segments]
