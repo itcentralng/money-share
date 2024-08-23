@@ -1,7 +1,8 @@
-from fastapi import FastAPI
-from fastapi import FastAPI
+from typing import Optional
+from fastapi import Depends, FastAPI, Form
 from fastapi.middleware.cors import CORSMiddleware
 from accounts.controller import Account
+from sms.controller import SMS
 from sms.models import SMSModel
 from dotenv import load_dotenv
 from response_templates.help_tmpl import (
@@ -11,6 +12,7 @@ from response_templates.help_tmpl import (
     help_send_template,
 )
 from response_templates.create_tmpl import create_user_template
+from response_templates.account_tmpl import account_info_template
 from users.controller import User
 from users.schemas import UserType
 
@@ -18,6 +20,7 @@ load_dotenv()
 app = FastAPI()
 user_db = User()
 account_db = Account()
+af_sms = SMS()
 
 origins = [
     "*",
@@ -37,57 +40,100 @@ async def home():
     return {"app": "Monee share", "status": "ok"}
 
 
-@app.post("/incoming-sms")
-async def receive_sms(sms: SMSModel):
+@app.post("/incoming-messages")
+async def receive_sms(
+    date: Optional[str] = Form(None),
+    from_: str = Form(..., alias="from"),
+    id: Optional[str] = Form(None),
+    linkId: Optional[str] = Form(None),
+    text: str = Form(...),
+    to: str = Form(...),
+    networkCode: Optional[str] = Form(None),
+):
+
+    is_valid = af_sms.check_structure(text)
+    if not is_valid[0]:
+        af_sms.send([from_], is_valid[1])
+        return True
+
+    sms = SMSModel(
+        date=date,
+        from_=from_,
+        id=id,
+        linkId=linkId,
+        text=text,
+        to=to,
+        networkCode=networkCode,
+    )
     command, *segments = sms.text.split(" ")
+    segments = [item for item in segments if item]  # remove empty strings
+    response_to_user = ""
 
     # HELP COMMANDS
     match command.lower():
         case "help":
             if not len(segments):
-                return help_template
+                response_to_user = help_template
             else:
                 match segments[0]:
                     case "info":
-                        return help_info_template
+                        response_to_user = help_info_template
                     case "create":
-                        return help_create_template
+                        response_to_user = help_create_template
                     case "send":
-                        return help_send_template
+                        response_to_user = help_send_template
 
     match command.lower():
         case "create":
             user = user_db.create(UserType(phone_number=sms.from_, pin="1234"))
             if user[0]:
-                # user_account = account_db.create(UserType(**user[1]))
-                return create_user_template.format(account_number=user)
+                user_account = UserType(**user[1])
+                response_to_user = create_user_template.format(
+                    account_number=user_account.phone_number.replace("+234", ""),
+                    account_balance=10000.0,
+                )
             else:
-                return user[1]
+                response_to_user = user[1]
 
     match command.lower():
         case "info":
             user = user_db.get(UserType(phone_number=sms.from_, pin="1234"))
             if user[0]:
-                return create_user_template.format(account_number=user)
+                user_account = UserType(**user[1])
+                response_to_user = account_info_template.format(
+                    account_number=user_account.accounts[0].account_number,
+                    account_balance=user_account.accounts[0].balance,
+                )
             else:
-                return user[1]
+                response_to_user = user[1]
 
     match command.lower():
         case "send":
+            print(segments)
             amount, beneficiary_number = segments
             try:
                 amount = float(amount)
             except ValueError:
-                return "Provide a valid amount"
+                response_to_user = "Provide a valid amount"
+                af_sms.send([sms.from_], response_to_user)
+                return True
 
             response = user_db.send(
                 sender_number=sms.from_,
                 beneficiary_number=beneficiary_number,
-                amount=float(amount),
+                amount=amount,
             )
             if response[0]:
-                return response
+                response_to_user = response
             else:
-                return response[1]
+                response_to_user = response[1]
 
-    return [command, segments]
+    if type(response_to_user) == list and len(response_to_user) > 2:
+        _, beneficiary_number = segments
+        af_sms.send([beneficiary_number], response_to_user[2])
+    if type(response_to_user) == list:
+        af_sms.send([sms.from_], response_to_user[1])
+    if type(response_to_user) == str:
+        af_sms.send([sms.from_], response_to_user)
+
+    return True

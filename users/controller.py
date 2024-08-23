@@ -93,7 +93,7 @@ class User:
                     account_db.update(db_beneficiary.id, beneficiary_new_balance)
                     return [
                         True,
-                        f"Successfully transfered N{amount} to {db_beneficiary.accounts[0].account_number}",
+                        f"Successfully transfered N{amount} to {db_beneficiary.accounts[0].account_number}\nBalance: N{sender_new_balance}",
                         f"You just recieved N{amount} from {db_sender.accounts[0].account_number}\nBalance: N{beneficiary_new_balance}",
                     ]
                 else:
