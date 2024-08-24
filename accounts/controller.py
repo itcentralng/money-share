@@ -1,9 +1,5 @@
-from dotenv import load_dotenv
-from accounts.schemas import AccountType
 from db.controller import db
 from users.schemas import UserType
-
-load_dotenv()
 
 
 class Account:

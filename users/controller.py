@@ -1,6 +1,4 @@
-from dotenv import load_dotenv
 from accounts.controller import Account
-from accounts.schemas import AccountType
 from db.controller import db
 from users.schemas import UserType
 from response_templates.create_tmpl import (
@@ -11,7 +9,6 @@ from response_templates.account_tmpl import (
     account_not_found_template,
 )
 
-load_dotenv()
 account_db = Account()
 
 

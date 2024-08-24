@@ -1,6 +1,9 @@
 import os
 import africastalking
 import re
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 username = os.environ.get("AFRICASTALKING_USER")
