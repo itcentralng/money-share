@@ -51,7 +51,7 @@ async def receive_sms(
     networkCode: Optional[str] = Form(None),
 ):
 
-    is_valid = af_sms.check_structure(text)
+    is_valid = af_sms.check_structure(text.lower())
     if not is_valid[0]:
         af_sms.send([from_], is_valid[1])
         return True
