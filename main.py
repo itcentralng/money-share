@@ -1,10 +1,9 @@
 from typing import Optional
-from fastapi import Depends, FastAPI, Form
+from fastapi import FastAPI, Form
 from fastapi.middleware.cors import CORSMiddleware
 from accounts.controller import Account
 from sms.controller import SMS
 from sms.models import SMSModel
-from dotenv import load_dotenv
 from response_templates.help_tmpl import (
     help_template,
     help_create_template,
@@ -16,7 +15,6 @@ from response_templates.account_tmpl import account_info_template
 from users.controller import User
 from users.schemas import UserType
 
-load_dotenv()
 app = FastAPI()
 user_db = User()
 account_db = Account()
