@@ -38,6 +38,11 @@ async def home():
     return {"app": "Monee share", "status": "ok"}
 
 
+@app.post("/")
+async def other_home():
+    return True
+
+
 @app.post("/incoming-messages")
 async def receive_sms(
     date: Optional[str] = Form(None),
